@@ -61,7 +61,7 @@ def loss():
     global run
 
     loss.score = Button(window, height=2, width=20, bg='green',
-                        text=f"You Lost With A Length Of {size + 1}\n(still smaller than Ty's snake)\n Click To Play Again",
+                        text=f"You Lost With A Length Of {size + 1}\n Click To Play Again",
                         font=("Times New Roman", 60), command=lambda: start())
     main.canvas.pack_forget()
     loss.score.pack(expand=True, fill='both')
