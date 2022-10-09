@@ -1,178 +1,213 @@
-import os
-import time
-import tkinter
 from tkinter import *
-import random
-try:
-    from pynput import keyboard
-except:
-    imports = open("imports.bat", "w")
-    imports.write("@echo off\npip install pynput")
-    imports.close()
-    os.system('imports.bat')
-    os.remove('imports.bat')
-    from pynput import keyboard
+from random import choice
+from time import sleep
 
 
-def keypress(key):
-    global direction, pause
+class Snake(Tk):
+    """
+    A class for the game of snake.
 
-    str_key = str(key)
-    if str_key == "'w'":
-        if direction == 3:
-            pass
+    Rules:
+        1) move with wasd
+        2) avoid hitting walls and snake body
+        3) eat more food to grow
+        4) grow as large as possible
+        5) press esc to pause
+    """
+
+    def __init__(self):
+        """
+        Creates the snake game
+
+        The following components are created:
+            1) the gui
+            2) bindings for the keys
+        """
+
+        # creates the window
+        super().__init__()
+        self.title('Snake')
+        self.geometry('850x650')
+        self.resizable(0, 0)
+
+        # creates the canvas
+        self.canvas = Canvas(self, bg='gray')
+        self.canvas.pack(fill=BOTH, expand=True)
+
+        # creates labels
+        self.pause_label = Label(self, text='Game Paused\nPress Escape To Start', bg='gray', font=100)
+        self.start = Label(self, text='Press Space To Start', bg='gray', font=100)
+        self.start.place(relx=.5, rely=.5, anchor=CENTER)
+
+        # sets up key-binds
+        self.bind('<space>', lambda event: self.setup())
+        self.bind('w', self.handle_key)
+        self.bind('a', self.handle_key)
+        self.bind('s', self.handle_key)
+        self.bind('d', self.handle_key)
+
+        # starts the game
+        self.mainloop()
+
+    def setup(self):
+        """
+        sets up variables for the game:
+            1) default snake starting position and direction
+            2) generates food
+        """
+
+        # binds keys to actions
+        self.unbind('<space>')
+        self.bind('<Escape>', lambda event: self.pause())
+
+        # creates the snake and food
+        self.body = [(8, 7), (8, 8), (8, 9)]
+        self.generate_food()
+        self.draw()
+
+        # other setup actions
+        self.start.place_forget()
+        self.facing = N
+        self.running = True
+        self.paused = False
+
+        # starts game
+        self.game()
+
+    def pause(self):
+        """
+        pauses the game until the player presses escape again
+        """
+
+        if self.paused:
+            self.game()
+            self.pause_label.place_forget()
+            self.paused = False
         else:
-            direction = 1
-    elif str_key == "'a'":
-        if direction == 4:
-            pass
+            self.after_cancel(self.game_loop)
+            self.pause_label.place(relx=.5, rely=.5, anchor=CENTER)
+            self.paused = True
+
+    def handle_key(self, key):
+        """
+        Handles key presses
+
+        Key-binds:
+            1) W moves the snake north
+            2) A moves the snake west
+            3) S moves the snake south
+            4) D moves the snake east
+        ** note: the snake can only change to a direction that is not opposite to the one it is currently facing
+        ie. cannot go north if already facing south **
+
+        :param key: the key event that occurred
+        """
+
+        # updates keys when they are pressed
+        self.facing = N if key.char == 'w' and self.facing != S else self.facing
+        self.facing = W if key.char == 'a' and self.facing != E else self.facing
+        self.facing = S if key.char == 's' and self.facing != N else self.facing
+        self.facing = E if key.char == 'd' and self.facing != W else self.facing
+
+    def generate_food(self):
+        """
+        generates a new bit of food for the snake to eat
+        """
+
+        # generates a new food bit
+        game = [(x, y) for x in range(17) for y in range(13)]
+        for body in self.body:
+            game.remove(body)
+        self.food = choice(game)
+
+    def draw(self):
+        """
+        draws all the game components to the screen
+            1) the snake and its body parts
+            2) the food bit
+        """
+
+        # draws the snake
+        self.canvas.delete('all')
+        for body in self.body:
+            self.canvas.create_rectangle(body[0] * 50, body[1] * 50,
+                                         body[0] * 50 + 50, body[1] * 50 + 50, fill='green')
+
+        # draws the food
+        self.canvas.create_rectangle(self.food[0] * 50, self.food[1] * 50,
+                                     self.food[0] * 50 + 50, self.food[1] * 50 + 50, fill='red')
+
+    def move(self):
+        """
+        moves the snake:
+            1) move the head
+            2) removes ending body part
+        """
+
+        # moves the head north
+        if self.facing == N:
+            self.body.insert(0, (self.body[0][0], self.body[0][1] - 1))
+
+        # moves the head east
+        elif self.facing == E:
+            self.body.insert(0, (self.body[0][0] + 1, self.body[0][1]))
+
+        # moves the head south
+        elif self.facing == S:
+            self.body.insert(0, (self.body[0][0], self.body[0][1] + 1))
+
+        # moves the head west
         else:
-            direction = 2
-    elif str_key == "'s'":
-        if direction == 1:
-            pass
+            self.body.insert(0, (self.body[0][0] - 1, self.body[0][1]))
+
+    def collisions(self):
+        """
+        checks and handles collisions:
+            1) collisions with snake
+            2) collisions with food
+            3) collisions with walls
+        """
+
+        # checks for wall collisions
+        if self.body[0][0] == -1 or self.body[0][1] == -1 or self.body[0][0] == 17 or self.body[0][1] == 13:
+            self.running = False
+
+        # checks for body collisions
+        for body in self.body[1:]:
+            if self.body[0] == body:
+                self.running = False
+
+        # checks for food collisions
+        if self.body[0] == self.food:
+            self.generate_food()
         else:
-            direction = 3
-    elif str_key == "'d'":
-        if direction == 2:
-            pass
+            self.body.pop()
+
+    def game(self):
+        """
+        The main loop where the game will run
+
+        Performs the following tasks:
+            1) moves the snake
+            2) checks for collisions with food, snake and walls
+            3) updates gui
+        """
+
+        # game mainloop
+        if self.running:
+            self.draw()
+            self.move()
+            self.collisions()
+            self.game_loop = self.after(300, self.game)
+
+        # game loss
         else:
-            direction = 4
-
-    if str_key == "Key.esc":
-        if pause == False:
-            pause = True
-        else:
-            pause = False
+            self.start = Label(self, text=f'You Got A Score Of {len(self.body)}\nPress Space To Play Again', bg='gray',
+                               font=100)
+            self.start.place(relx=.5, rely=.5, anchor=CENTER)
+            self.bind('<space>', lambda event: self.setup())
+            self.unbind('<Escape>')
 
 
-def start():
-    global run, size, direction, pause
-
-    loss.score.pack_forget()
-    run = True
-    pause = False
-    size = 2
-    direction = 1
-    main()
-
-
-def loss():
-    global run
-
-    loss.score = Button(window, height=2, width=20, bg='green',
-                        text=f"You Lost With A Length Of {size + 1}\n Click To Play Again",
-                        font=("Times New Roman", 60), command=lambda: start())
-    main.canvas.pack_forget()
-    loss.score.pack(expand=True, fill='both')
-    run = False
-
-
-def main():
-    global direction, size, run
-
-    x = 750
-    y = 500
-    red_x = 50 * random.randrange(0, game_width)
-    red_y = 50 * random.randrange(0, game_height)
-    while red_x == x and red_y == y:
-        red_x = 50 * random.randrange(0, game_width)
-        red_y = 50 * random.randrange(0, game_height)
-    old_x = []
-    old_y = []
-
-    start_button.pack_forget()
-    main.canvas = tkinter.Canvas(window, bg='grey', height=screen_height, width=screen_width)
-    main.canvas.pack()
-    listener = keyboard.Listener(on_press=keypress)
-    listener.start()
-
-    while run:
-
-        main.canvas.create_rectangle(x, y, x + 50, y + 50, fill='green')
-        main.canvas.create_rectangle(red_x, red_y, red_x + 50, red_y + 50, fill='red')
-        old_x.append(x)
-        old_y.append(y)
-
-        while pause:
-            try:
-                for value in range(size):
-                    main.canvas.create_rectangle(old_x[-value - 2], old_y[-value - 2], old_x[-value - 2] + 50,
-                                                 old_y[-value - 2] + 50, fill='green')
-
-            except:
-                pass
-            window.update()
-
-        try:
-            old_x.pop(-size - 2)
-            old_y.pop(-size - 2)
-        except:
-            pass
-
-        try:
-            for value in range(size):
-                main.canvas.create_rectangle(old_x[-value - 2], old_y[-value - 2], old_x[-value - 2] + 50,
-                                             old_y[-value - 2] + 50, fill='green')
-
-        except:
-            pass
-
-        window.update()
-        main.canvas.delete('all')
-
-        if x == red_x and y == red_y:
-            red_x = 50 * random.randrange(0, game_width)
-            red_y = 50 * random.randrange(0, game_height)
-            rand = True
-            while rand:
-                rand = False
-                for number in range(size):
-                    while (red_x == old_x[-number - 2] and red_y == old_y[-number - 2]) or (red_x == x and red_y == y):
-                        red_x = 50 * random.randrange(0, game_width)
-                        red_y = 50 * random.randrange(0, game_height)
-                        rand = True
-            size += 1
-
-        try:
-            if size == len(old_x) - 1:
-                for variable in range(size):
-                    if x == old_x[-variable - 2] and y == old_y[-variable - 2]:
-                        loss()
-        except:
-            pass
-
-        if direction == 1:
-            y -= 50
-        elif direction == 2:
-            x -= 50
-        elif direction == 3:
-            y += 50
-        elif direction == 4:
-            x += 50
-        time.sleep(.1)
-        if x < 0 or x > screen_width - 50 or y < 0 or y > screen_height - 50:
-            loss()
-
-
-screen_height = 950
-screen_width = 1500
-game_height = screen_height/50
-game_width = screen_width/50
-direction = 1
-size = 2
-run = True
-pause = False
-window = Tk()
-window.title("Snake")
-window.geometry("1920x1080")
-window.attributes('-fullscreen', True)
-window.config(cursor="none")
-window.configure(bg='black')
-start_button = Button(window, height=2, width=20, bg='green', text="Snake\nClick To Start",
-                      font=("Times New Roman", 60), command=lambda: main())
-start_button.pack(expand=True, fill='both')
-window.mainloop()
-
-
-# esc glitch and game crashes if food spawns in front of play before fully extended at start
+if __name__ == '__main__':
+    Snake()
