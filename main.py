@@ -1,6 +1,5 @@
 from tkinter import *
 from random import choice
-from time import sleep
 
 
 class Snake(Tk):
