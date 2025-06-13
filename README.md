@@ -21,5 +21,5 @@ Make sure you have Python 3 installed. Tkinter comes pre-installed with most Pyt
 To run the game, simply execute the Python script:
 
 ```bash
-python snake.py
+python main.py
 ```
