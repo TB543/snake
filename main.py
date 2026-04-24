@@ -26,20 +26,22 @@ class Snake(Tk):
         # creates the window
         super().__init__()
         self.title('Snake')
-        self.geometry('850x650')
+        self.geometry('1024x600+0+0')
         self.resizable(0, 0)
+        self.configure(cursor=None, background='black')
 
         # creates the canvas
-        self.canvas = Canvas(self, bg='gray')
-        self.canvas.pack(fill=BOTH, expand=True)
+        self.canvas = Canvas(self, bg='gray', width=1000, height=600)
+        self.canvas.pack()
 
         # creates labels
-        self.pause_label = Label(self, text='Game Paused\nPress Escape To Start', bg='gray', font=100)
-        self.start = Label(self, text='Press Space To Start', bg='gray', font=100)
+        self.pause_label = Label(self, text='Game Paused\nPress Space To Resume', bg='gray', font=100)
+        self.start = Label(self, text='Press Space To Start\nPress Escape At Any Time To Exit', bg='gray', font=100)
         self.start.place(relx=.5, rely=.5, anchor=CENTER)
 
         # sets up key-binds
         self.bind('<space>', lambda event: self.setup())
+        self.bind('<Escape>', lambda event: self.destroy())
         self.bind('w', self.handle_key)
         self.bind('a', self.handle_key)
         self.bind('s', self.handle_key)
@@ -56,8 +58,7 @@ class Snake(Tk):
         """
 
         # binds keys to actions
-        self.unbind('<space>')
-        self.bind('<Escape>', lambda event: self.pause())
+        self.bind('<space>', lambda event: self.pause())
 
         # creates the snake and food
         self.body = [(8, 7), (8, 8), (8, 9)]
@@ -114,7 +115,7 @@ class Snake(Tk):
         """
 
         # generates a new food bit
-        game = [(x, y) for x in range(17) for y in range(13)]
+        game = [(x, y) for x in range(20) for y in range(12)]
         for body in self.body:
             game.remove(body)
         self.food = choice(game)
@@ -168,7 +169,7 @@ class Snake(Tk):
         """
 
         # checks for wall collisions
-        if self.body[0][0] == -1 or self.body[0][1] == -1 or self.body[0][0] == 17 or self.body[0][1] == 13:
+        if self.body[0][0] == -1 or self.body[0][1] == -1 or self.body[0][0] == 20 or self.body[0][1] == 12:
             self.running = False
 
         # checks for body collisions
@@ -205,7 +206,6 @@ class Snake(Tk):
                                font=100)
             self.start.place(relx=.5, rely=.5, anchor=CENTER)
             self.bind('<space>', lambda event: self.setup())
-            self.unbind('<Escape>')
 
 
 if __name__ == '__main__':
